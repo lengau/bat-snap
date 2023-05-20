@@ -1,0 +1,52 @@
+name: Snap upstream releases
+
+on:
+  workflow_dispatch:  # Allow manual run
+  workflow_call: # Allow calling from another workflow
+  schedule:
+    - cron: "0 6 * * *"  # Every day at 06:00 UTC
+
+concurrency: ${{ github.workflow }}
+
+permissions:
+  contents: write
+  packages: write
+  issues: write
+
+jobs:
+  sync-gh-releases:
+    name: Sync upstream releases
+    uses: lengau/snappify/.github/workflows/sync-gh-releases.yaml@v0.0.3
+    with:
+      upstream_repository: sharkdp/bat
+      max_releases: 1
+      prep_script: tools/prep_release.sh
+  do_releases:
+    name: Release ${{ matrix.tag }}
+    runs-on: ubuntu-latest
+    needs: sync-gh-releases
+    if: ${{ needs.sync-gh-releases.outputs.release_tags != '[]' && needs.sync-gh-releases.outputs.release_tags != '' }}
+    strategy:
+      max-parallel: 1
+      matrix:
+        tag: ${{ fromJSON(needs.sync-gh-releases.outputs.release_tags) }}
+    steps:
+      - name: Install Snapcraft
+        run: sudo snap install --classic snapcraft
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ matrix.tag }}
+          fetch-depth: 0
+      - uses: snapcore/action-build@v1
+        id: snapcraft
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Ruff ${{ matrix.tag }}
+          body: See upstream release at https://github.com/sharkdp/bat/releases/tag/${{ matrix.tag }}
+          prerelease: ${{ contains(matrix.tag, 'pre') }}
+          tag_name: ${{ matrix.tag }}
+          files: "*.snap"
+      - name: PR to main
+        run: gh pr create --title "Release ${{ matrix.tag }}"
+

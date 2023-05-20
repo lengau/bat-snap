@@ -1,0 +1,32 @@
+name: bat # you probably want to 'snapcraft register <name>'
+base: core22 # the base snap is the execution environment for this snap
+summary: A cat(1) clone with syntax highlighting and Git integration.
+version: v0.23.0
+description: |
+  This is an unofficial snap of bat.
+
+grade: devel # must be 'stable' to release into candidate/stable channels
+confinement: classic # use 'strict' once you have the right plugs and slots
+
+plugs:
+  read-everything:
+    interface: system-files
+    read:
+      - /*
+
+apps:
+  bat:
+    command: bin/bat
+    plugs:
+      - home
+      - removable-media
+      - read-everything
+
+parts:
+  bat:
+    plugin: rust
+    build-packages:
+      - rustc
+      - cargo
+    source: https://github.com/sharkdp/bat.git
+    source-commit: v0.23.0
