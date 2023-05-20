@@ -1,4 +1,4 @@
-name: bat # you probably want to 'snapcraft register <name>'
+name: lengau-bat # you probably want to 'snapcraft register <name>'
 base: core22 # the base snap is the execution environment for this snap
 summary: A cat(1) clone with syntax highlighting and Git integration.
 version: v0.23.0
